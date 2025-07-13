@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="./public/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./src/assets/scss/main.scss">
+    <title>Image Resizer</title>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Блок загрузки -->
+      <div class="upload-section">
+        <div class="image-upload-block">
+          <!-- Загрузка файла -->
+          <div class="image-preview">
+            <img id="preview" src="" alt="Превью изображения">
+            <input type="file" id="upload" accept="image/png, image/jpeg">
+            <label for="upload" class="upload-label">+ Загрузить PNG/JPG</label>
+          </div>
+  
+          <!-- Ввод ссылки -->
+          <div class="link-input">
+            <label>Или вставьте ссылку:</label>
+            <input type="url" id="image-url" placeholder="https://example.com/image.jpg">
+            <button id="load-url">Загрузить</button>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Блок вывода изображения -->
+      <div class="output-section">
+        <h3>Ваше изображение:</h3>
+        <div class="image-output">
+          <img id="output-image" src="" alt="Загруженное изображение">
+          <p id="error-message"></p>
+        </div>
+        <div class="control-btn">
+          <div class="size-controls">
+              <label for="width-input">Ширина (px):</label>
+              <input type="number" id="width-input" min="1" value="0">
+              
+              <label for="height-input">Высота (px):</label>
+              <input type="number" id="height-input" min="1" value="0">
+              
+              <button id="apply-size">Применить размер</button>
+              <a href="" id="accept" download></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./src/ts/index.ts"></script>
+  </body>
+</html>
