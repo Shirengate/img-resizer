@@ -138,7 +138,6 @@ document.addEventListener('DOMContentLoaded',() => {
         if(link.length === 0) return alert('Введите ссылку')
         try{
             const response = await fetch(link);
-            console.log(response.headers)
             const bloblLink = await response.blob();
             if(!bloblLink.type.includes('image')){
                 throw new Error('Введите валидную ссылку');
