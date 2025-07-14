@@ -37,15 +37,23 @@
         </div>
         <div class="control-btn">
           <div class="size-controls">
-              <label for="width-input">Ширина (px):</label>
-              <input type="number" id="width-input" min="1" value="0">
-              
-              <label for="height-input">Высота (px):</label>
-              <input type="number" id="height-input" min="1" value="0">
-              
-              <button id="apply-size">Применить размер</button>
-              <a href="" id="accept" download></a>
+            <label for="width-input">Ширина (px):</label>
+            <input type="number" id="width-input" min="1" value="0">
+            
+            <label for="height-input">Высота (px):</label>
+            <input type="number" id="height-input" min="1" value="0">
+            
+            <div class="format-selector">
+              <label for="image-format">Формат:</label>
+              <select id="image-format">
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/png">PNG</option>
+                <option value="image/webp">WebP</option>
+              </select>
             </div>
+            
+            <button id="apply-size">Применить размер</button>
+            <a href="" id="accept" download></a>
           </div>
         </div>
       </div>

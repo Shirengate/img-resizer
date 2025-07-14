@@ -1,6 +1,8 @@
+type ImageFormat = 'image/png' | 'image/jpeg' | 'image/webp'
 interface ImageOptions  {
     width:string | number,
-    height:string | number
+    height:string | number,
+    format:ImageFormat
 }
 
 interface DownloadLink extends HTMLLIElement{
@@ -10,7 +12,8 @@ interface DownloadLink extends HTMLLIElement{
 document.addEventListener('DOMContentLoaded',() => {
     /// Объявлния
     const acceptSize = document.querySelector('#apply-size') as HTMLButtonElement
-    const accept = document.querySelector('#accept') as DownloadLink
+    const accept = document.querySelector('#accept') as DownloadLink /// кнопка устаовки
+    const formatSelect = document.querySelector('#image-format') as HTMLSelectElement
     const controlBtnBlock = document.querySelector('.control-btn') as HTMLElement;
     const widthControl = document.querySelector('#width-input') as HTMLInputElement;
     const heightControl = document.querySelector('#height-input') as HTMLInputElement;
@@ -19,7 +22,8 @@ document.addEventListener('DOMContentLoaded',() => {
     const downloadLink = document.querySelector('#load-url') as HTMLButtonElement;
     const imageTarget:ImageOptions = {
         width:widthControl.value,
-        height:heightControl.value
+        height:heightControl.value,
+        format:'image/png'
     }
 
     const proxyImage = new Proxy(outputImage, {
@@ -63,18 +67,28 @@ document.addEventListener('DOMContentLoaded',() => {
                 return target[prop]
             }
         },
-        set(target,prop:keyof ImageOptions,newValue:number){
+        set(target,prop:keyof ImageOptions,newValue:number | ImageFormat){
             switch(prop){
                 case 'width':
-                    widthControl.value = String(newValue)
-                    proxyImage.width = newValue
+                    if(typeof newValue === 'number'){
+                        widthControl.value = String(newValue)
+                        proxyImage.width = newValue
+                    }
+       
                     break;
                 case 'height':
+                  if(typeof newValue === 'number'){
                     heightControl.value = String(newValue)
                     proxyImage.height = newValue
+                  }
+                    break;
+                case 'format':
+                    if(typeof newValue !== 'number'){
+                        formatSelect.value = newValue
+                    }
                     break;
             }
-            target[prop] = newValue;
+            target[prop] = newValue
             return true
  
         }
@@ -91,7 +105,9 @@ document.addEventListener('DOMContentLoaded',() => {
             const file:File = target.files[0];
             const url = URL.createObjectURL(file)     
             proxyImage.src = url;
-            proxyImage.alt = target.files[0].name
+            proxyImage.alt = target.files[0].name;
+            imgOpitons.format = file.type as ImageFormat
+            
         }   
     })
 
@@ -121,9 +137,9 @@ document.addEventListener('DOMContentLoaded',() => {
             canvas.width, canvas.height 
           );
         
-         const canvasUrl =  canvas.toDataURL('image/png');
-          const downloadName = `Resized-${outputImage.alt.split('.')[0]}`
-        accept.href = canvasUrl  
+        const canvasUrl =  canvas.toDataURL(imgOpitons.format);
+        const downloadName = `Resized-${outputImage.alt.split('.')[0]}`
+        accept.href = canvasUrl     
         accept.download = downloadName  
         accept.click();
         proxyImage.alt = '';
@@ -143,7 +159,10 @@ document.addEventListener('DOMContentLoaded',() => {
                 throw new Error('Введите валидную ссылку');
             }
             const imgUrl = URL.createObjectURL(bloblLink);
-            proxyImage.src = imgUrl
+            proxyImage.src = imgUrl;
+            proxyImage.alt = 'someImage';
+            imgOpitons.format = bloblLink.type as ImageFormat;
+
         }catch(error){
             if(error instanceof Error){
                 if(error.message === 'Введите валидную ссылку'){
@@ -153,5 +172,10 @@ document.addEventListener('DOMContentLoaded',() => {
         console.error(error)  
         }
 
+    })
+    /// Работа с форматом данных
+    formatSelect.addEventListener('change', (e) => {
+        const option = e.target as HTMLOptionElement;
+        imgOpitons.format = option.value as ImageFormat;
     })
 })
