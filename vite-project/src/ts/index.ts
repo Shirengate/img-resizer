@@ -1,5 +1,6 @@
 import type {ImageFormat,ImageOptions,DownloadLink} from './types/index'
 import { setImageSrc } from './composables/useSetImage';
+import buffer from '../assets/imgs/buffer.png'
 document.addEventListener('DOMContentLoaded',() => {
     /// Объявлния
     const acceptSize = document.querySelector('#apply-size') as HTMLButtonElement
@@ -32,7 +33,7 @@ document.addEventListener('DOMContentLoaded',() => {
                         }
                         if(newValue === ''){
                             controlBtnBlock.style.display = 'none'
-                            outputImage.src = newValue
+                            outputImage.src = buffer
                             return true
                         }
                         controlBtnBlock.style.display = 'block'
