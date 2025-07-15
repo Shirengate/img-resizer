@@ -1,18 +1,8 @@
-type ImageFormat = 'image/png' | 'image/jpeg' | 'image/webp'
-interface ImageOptions  {
-    width:string | number,
-    height:string | number,
-    format:ImageFormat
-}
-
-interface DownloadLink extends HTMLLIElement{
-    download:string,
-    href:string | URL 
-}
+import type {ImageFormat,ImageOptions,DownloadLink} from './types/index'
+import { setImageSrc } from './composables/useSetImage';
 document.addEventListener('DOMContentLoaded',() => {
     /// Объявлния
     const acceptSize = document.querySelector('#apply-size') as HTMLButtonElement
-    const accept = document.querySelector('#accept') as DownloadLink /// кнопка устаовки
     const formatSelect = document.querySelector('#image-format') as HTMLSelectElement
     const controlBtnBlock = document.querySelector('.control-btn') as HTMLElement;
     const widthControl = document.querySelector('#width-input') as HTMLInputElement;
@@ -20,66 +10,49 @@ document.addEventListener('DOMContentLoaded',() => {
     const outputImage = document.querySelector('#output-image') as HTMLImageElement;
     const linkInput = document.querySelector('#image-url') as HTMLInputElement;
     const downloadLink = document.querySelector('#load-url') as HTMLButtonElement;
-    const imageTarget:ImageOptions = {
-        width:widthControl.value,
-        height:heightControl.value,
+    
+    let imgOpitons:ImageOptions = {
+        link:outputImage.src,
+        width:Number(widthControl.value),
+        height:Number(heightControl.value),
         format:'image/png'
     }
-
-    const proxyImage = new Proxy(outputImage, {
-        get(target:typeof outputImage,prop:keyof typeof outputImage){
-            if(prop in target){
-                return target[prop]
-            }
-        },
-        set(target:typeof outputImage,prop:keyof typeof outputImage, value:string){
-            if(prop === 'width' || prop === 'height'){
-                target[prop] = Number(value)
-            }
-            if(prop === 'src'){
-                if(value === ''){
-                    controlBtnBlock.style.display = 'none'
-                    target[prop] = value
-                    return true
-                }
-                controlBtnBlock.style.display = 'block'
-                target.onload =  function() {  
-                    imgOpitons.width = outputImage.naturalWidth;  
-                    imgOpitons.height = outputImage.naturalHeight; 
-
-                  };
-                target[prop] = value
-         
-            }
-            if(prop === 'alt'){
-                if(value === ''){
-                    target[prop] = 'Загруженное изображение'
-                    return true
-                }
-                target[prop] = value
-            }
-            return true
-        }
-    })
-    const imgOpitons  = new Proxy(imageTarget, {
+     imgOpitons  = new Proxy(imgOpitons, {
         get(target,prop:keyof ImageOptions){
             if(prop in target){
                 return target[prop]
             }
         },
-        set(target,prop:keyof ImageOptions,newValue:number | ImageFormat){
+        set(target,prop:keyof ImageOptions,newValue:number | ImageFormat | string){
             switch(prop){
+                case 'link':
+                    if(typeof newValue === 'string'){
+                        if(target[prop].includes('blob')){
+                            URL.revokeObjectURL(target[prop])
+                        }
+                        if(newValue === ''){
+                            controlBtnBlock.style.display = 'none'
+                            outputImage.src = newValue
+                            return true
+                        }
+                        controlBtnBlock.style.display = 'block'
+                        outputImage.onload = function(){
+                            imgOpitons.width = outputImage.naturalWidth;  
+                            imgOpitons.height = outputImage.naturalHeight; 
+                        }
+                        outputImage.src = newValue
+                        return true
+                    }
+                    break;
                 case 'width':
                     if(typeof newValue === 'number'){
                         widthControl.value = String(newValue)
-                        proxyImage.width = newValue
                     }
        
                     break;
                 case 'height':
                   if(typeof newValue === 'number'){
                     heightControl.value = String(newValue)
-                    proxyImage.height = newValue
                   }
                     break;
                 case 'format':
@@ -88,12 +61,10 @@ document.addEventListener('DOMContentLoaded',() => {
                     }
                     break;
             }
-            target[prop] = newValue
+            target[prop] = newValue as never
             return true
- 
         }
     })
-    
     /// Работа с файлом
     const fileInput = document.querySelector('#upload') as Element
     fileInput.addEventListener("change" , (event) => {
@@ -103,28 +74,25 @@ document.addEventListener('DOMContentLoaded',() => {
         const target = event.target as HTMLInputElement
         if(target.files){
             const file:File = target.files[0];
-            const url = URL.createObjectURL(file)     
-            proxyImage.src = url;
-            proxyImage.alt = target.files[0].name;
-            imgOpitons.format = file.type as ImageFormat
+            setImageSrc(imgOpitons,file);
             
         }   
     })
-
     /// Работа с шириной и высотой
     widthControl.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement
-        proxyImage.width = Number(target.value)
+        imgOpitons.width = Number(target.value)
     })
     heightControl.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement
-        proxyImage.height = Number(target.value)
+        imgOpitons.height = Number(target.value)
     })    
 
     // Изменение размеров
     acceptSize.addEventListener('click', (e) => {
         e.preventDefault()
-        const {width,height} = outputImage;
+        const downloadBuffer = document.querySelector('#accept') as DownloadLink 
+        const {width,height} = imgOpitons;
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -139,11 +107,10 @@ document.addEventListener('DOMContentLoaded',() => {
         
         const canvasUrl =  canvas.toDataURL(imgOpitons.format);
         const downloadName = `Resized-${outputImage.alt.split('.')[0]}`
-        accept.href = canvasUrl     
-        accept.download = downloadName  
-        accept.click();
-        proxyImage.alt = '';
-        proxyImage.src = '';
+        downloadBuffer.href = canvasUrl     
+        downloadBuffer.download = downloadName  
+        downloadBuffer.click();
+        imgOpitons.link = '';
         linkInput.value = '';
         outputImage.removeAttribute('width');
         outputImage.removeAttribute('height');
@@ -154,15 +121,11 @@ document.addEventListener('DOMContentLoaded',() => {
         if(link.length === 0) return alert('Введите ссылку')
         try{
             const response = await fetch(link);
-            const bloblLink = await response.blob();
-            if(!bloblLink.type.includes('image')){
+            const file = await response.blob();
+            if(!file.type.includes('image')){
                 throw new Error('Введите валидную ссылку');
             }
-            const imgUrl = URL.createObjectURL(bloblLink);
-            proxyImage.src = imgUrl;
-            proxyImage.alt = 'someImage';
-            imgOpitons.format = bloblLink.type as ImageFormat;
-
+            setImageSrc(imgOpitons,file)
         }catch(error){
             if(error instanceof Error){
                 if(error.message === 'Введите валидную ссылку'){
